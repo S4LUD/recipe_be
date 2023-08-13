@@ -16,7 +16,9 @@ interface IUserDocument extends Document {
 }
 
 // Interface representing the "user" model type (for static methods)
-interface IUserModel extends Model<IUserDocument> {
+export interface IUserModel extends Model<IUserDocument> {
+  recipe_id: any;
+  favorites_id: any;
   // Add any custom static methods here if needed
 }
 

@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
-import UserModel from "../model/user";
+import UserModel, { IUserModel } from "../model/user";
 import {
   RegisterMiddleware,
   AccountTokenMiddleware,
@@ -105,14 +105,7 @@ router.get(
     const { _id } = (req as any).user;
     const result = await UserModel.findOne({
       _id: _id,
-    })
-      .select("-password")
-      .populate({
-        path: "favorites_id",
-      })
-      .populate({
-        path: "recipe_id",
-      });
+    }).select("-password");
     res.status(200).send(result);
   }
 );
@@ -461,12 +454,7 @@ router.get(
   "/user/get/all/recipes",
   accountVerificationMiddleware,
   async (req: Request, res: Response) => {
-    const { _id } = (req as any).user;
-    const { recipeId } = req.body;
-    const result = await RecipeModel.findOne({
-      userId: _id,
-      _id: recipeId,
-    });
+    const result = await RecipeModel.find();
     res.status(200).send(result);
   }
 );
@@ -608,6 +596,115 @@ router.get(
       .exec();
 
     res.status(200).send({ status: true, mostRecentRecipe });
+  }
+);
+
+router.post(
+  "/user/search/recipes",
+  accountVerificationMiddleware,
+  async (req: Request, res: Response) => {
+    const { searchText, categories } = req.body;
+    let searchQuery = {};
+
+    try {
+      if (searchText) {
+        // Use regular expression to perform a case-insensitive search on the title field
+        const searchRegex = new RegExp(searchText, "i");
+        searchQuery = { ...searchQuery, title: searchRegex };
+      }
+
+      if (categories?.length > 0) {
+        const categoriesArray = Array.isArray(categories)
+          ? categories
+          : [categories];
+        // Add category filter to the search query
+        searchQuery = { ...searchQuery, categories: { $in: categoriesArray } };
+      }
+
+      // Perform the search using the combined searchQuery
+      const searchResults = await RecipeModel.find(searchQuery);
+
+      res.status(200).send(searchResults);
+    } catch (error) {
+      console.error("Error searching recipes:", error);
+      res.status(500).send({ message: "Error searching recipes" });
+    }
+  }
+);
+
+router.get(
+  "/user/get/all/my/recipe",
+  accountVerificationMiddleware,
+  async (req: Request, res: Response) => {
+    const { _id } = (req as any).user;
+
+    try {
+      // Perform the search using the combined searchQuery
+      const result: IUserModel = await UserModel.findById({
+        _id: _id,
+      })
+        .populate({
+          path: "recipe_id",
+        })
+        .select([
+          "-_id",
+          "-password",
+          "-firstName",
+          "-lastName",
+          "-username",
+          "-favorites_id",
+          "-createdAt",
+          "-updatedAt",
+          "-image",
+          "-image_public_id",
+          "-bio",
+        ]);
+
+      res.status(200).send({ status: true, recipe_id: result?.recipe_id });
+    } catch (error) {
+      console.error("Error getting recipes:", error);
+      res.status(500).send({ status: false, message: "Error getting recipes" });
+    }
+  }
+);
+
+router.get(
+  "/user/get/all/my/favorites",
+  accountVerificationMiddleware,
+  async (req: Request, res: Response) => {
+    const { _id } = (req as any).user;
+
+    try {
+      // Perform the search using the combined searchQuery
+      const result: IUserModel = await UserModel.findById({
+        _id: _id,
+      })
+        .populate({
+          path: "favorites_id",
+        })
+        .select([
+          "-_id",
+          "-password",
+          "-firstName",
+          "-lastName",
+          "-username",
+          "-recipe_id",
+          "-createdAt",
+          "-updatedAt",
+          "-image",
+          "-image_public_id",
+          "-bio",
+        ]);
+
+      res
+        .status(200)
+        .send({ status: true, favorites_id: result?.favorites_id });
+    } catch (error) {
+      console.error("Error getting favorite recipes:", error);
+      res
+        .status(500)
+        .send({ status: false, message: "Error getting favorite recipes" });
+    }
   }
 );
 
