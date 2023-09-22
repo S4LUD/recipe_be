@@ -554,26 +554,8 @@ router.get(
   "/user/get/all/best/recipe",
   accountVerificationMiddleware,
   async (req: Request, res: Response) => {
-    const currentDate = new Date();
-
-    // Calculate the start and end of the current week
-    const startOfCurrentWeek = new Date(currentDate);
-    startOfCurrentWeek.setDate(
-      currentDate.getDate() - currentDate.getDay() + 1
-    ); // Start of the current week (Monday)
-    const endOfCurrentWeek = new Date(startOfCurrentWeek);
-    endOfCurrentWeek.setDate(startOfCurrentWeek.getDate() + 6); // End of the current week (Sunday)
-
-    // Calculate the start and end of the last week
-    const startOfLastWeek = new Date(startOfCurrentWeek);
-    startOfLastWeek.setDate(startOfCurrentWeek.getDate() - 7); // Start of the last week (Monday)
-    const endOfLastWeek = new Date(startOfLastWeek);
-    endOfLastWeek.setDate(startOfLastWeek.getDate() + 6); // End of the last week (Sunday)
-
     // Fetch the top 5 liked recipes created within the current week
-    const topLikedRecipes = await RecipeModel.find({
-      createdAt: { $gte: startOfLastWeek, $lte: endOfCurrentWeek },
-    })
+    const topLikedRecipes = await RecipeModel.find()
       .sort("-likes") // Sort by likes in descending order
       .limit(5); // Limit to 5 recipes
 
@@ -589,9 +571,7 @@ router.get(
     const oneWeekAgo = new Date(currentDate);
     oneWeekAgo.setDate(currentDate.getDate() - 7);
 
-    const mostRecentRecipe = await RecipeModel.find({
-      createdAt: { $gte: oneWeekAgo, $lt: currentDate },
-    })
+    const mostRecentRecipe = await RecipeModel.find()
       .sort({ createdAt: -1 })
       .exec();
 
