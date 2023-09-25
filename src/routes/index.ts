@@ -835,34 +835,30 @@ router.patch(
   }
 );
 
-router.get(
-  "/user/get/recipe",
-  accountVerificationMiddleware,
-  async (req: Request, res: Response) => {
-    const { _id } = req.body;
+router.get("/user/get/recipe", async (req: Request, res: Response) => {
+  const { _id } = req.body;
 
-    const mostRecentRecipe = await RecipeModel.find({ _id: _id })
-      .sort({ createdAt: -1 })
-      .populate({
-        path: "comments_id",
-        model: "comment",
-        populate: [
-          {
-            path: "user_id",
-            model: "user",
-            select: "image firstName lastName",
-          },
-        ],
-      })
-      .populate({
-        path: "userId",
-        model: "user",
-        select: "image",
-      })
-      .exec();
+  const mostRecentRecipe = await RecipeModel.find({ _id: _id })
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "comments_id",
+      model: "comment",
+      populate: [
+        {
+          path: "user_id",
+          model: "user",
+          select: "image firstName lastName",
+        },
+      ],
+    })
+    .populate({
+      path: "userId",
+      model: "user",
+      select: "image",
+    })
+    .exec();
 
-    res.status(200).send({ status: true, mostRecentRecipe });
-  }
-);
+  res.status(200).send({ status: true, mostRecentRecipe });
+});
 
 export default router;
