@@ -835,7 +835,7 @@ router.patch(
   }
 );
 
-router.get("/user/get/recipe", async (req: Request, res: Response) => {
+router.post("/user/get/recipe", async (req: Request, res: Response) => {
   const { _id } = req.body;
 
   const mostRecentRecipe = await RecipeModel.find({ _id: _id })
