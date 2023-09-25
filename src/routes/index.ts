@@ -9,6 +9,7 @@ import {
   accountVerificationMiddleware,
 } from "../middleware/user";
 import RecipeModel from "../model/recipe";
+import CommentModel, { ICommentModel } from "../model/comment";
 
 const router: Router = Router();
 // Set up multer for handling file uploads
@@ -445,8 +446,35 @@ router.get(
   async (req: Request, res: Response) => {
     const result = await RecipeModel.aggregate([
       { $sample: { size: 5 } }, // Retrieve 5 random recipes
+      { $project: { _id: 1 } }, // Project only the _id field
     ]);
-    res.status(200).send(result);
+
+    // Extract the _id values from the result
+    const recipeIds = result.map((recipe) => recipe._id);
+
+    // Step 2: Use the _id values to retrieve the recipes with populated data
+    const recommendedRecipes = await RecipeModel.find({
+      _id: { $in: recipeIds },
+    })
+      .populate({
+        path: "comments_id",
+        model: "comment",
+        populate: [
+          {
+            path: "user_id",
+            model: "user",
+            select: "image firstName lastName",
+          },
+        ],
+      })
+      .populate({
+        path: "userId",
+        model: "user",
+        select: "image",
+      });
+
+    // Send the populated recipes as a response
+    res.status(200).send(recommendedRecipes);
   }
 );
 
@@ -557,7 +585,23 @@ router.get(
     // Fetch the top 5 liked recipes created within the current week
     const topLikedRecipes = await RecipeModel.find()
       .sort("-likes") // Sort by likes in descending order
-      .limit(5); // Limit to 5 recipes
+      .limit(5)
+      .populate({
+        path: "comments_id",
+        model: "comment",
+        populate: [
+          {
+            path: "user_id",
+            model: "user",
+            select: "image firstName lastName",
+          },
+        ],
+      })
+      .populate({
+        path: "userId",
+        model: "user",
+        select: "image",
+      }); // Limit to 5 recipes
 
     res.status(200).send({ status: true, topLikedRecipes });
   }
@@ -573,6 +617,22 @@ router.get(
 
     const mostRecentRecipe = await RecipeModel.find()
       .sort({ createdAt: -1 })
+      .populate({
+        path: "comments_id",
+        model: "comment",
+        populate: [
+          {
+            path: "user_id",
+            model: "user",
+            select: "image firstName lastName",
+          },
+        ],
+      })
+      .populate({
+        path: "userId",
+        model: "user",
+        select: "image",
+      })
       .exec();
 
     res.status(200).send({ status: true, mostRecentRecipe });
@@ -584,13 +644,21 @@ router.post(
   accountVerificationMiddleware,
   async (req: Request, res: Response) => {
     const { searchText, categories } = req.body;
-    let searchQuery = {};
+    let searchQuery: any = {}; // Define searchQuery with any type for flexibility
+
+    console.log(searchText, categories);
 
     try {
       if (searchText) {
         // Use regular expression to perform a case-insensitive search on the title field
         const searchRegex = new RegExp(searchText, "i");
-        searchQuery = { ...searchQuery, title: searchRegex };
+
+        // Initialize searchQuery with an $or property as an array
+        searchQuery.$or = [{ title: searchRegex }]; // Search by title
+
+        // Add ingredient search using regex
+        const ingredientRegex = new RegExp(searchText, "i");
+        searchQuery.$or.push({ "ingredients.value": ingredientRegex }); // Search by ingredients
       }
 
       if (categories?.length > 0) {
@@ -602,7 +670,23 @@ router.post(
       }
 
       // Perform the search using the combined searchQuery
-      const searchResults = await RecipeModel.find(searchQuery);
+      const searchResults = await RecipeModel.find(searchQuery)
+        .populate({
+          path: "comments_id",
+          model: "comment",
+          populate: [
+            {
+              path: "user_id",
+              model: "user",
+              select: "image firstName lastName",
+            },
+          ],
+        })
+        .populate({
+          path: "userId",
+          model: "user",
+          select: "image",
+        });
 
       res.status(200).send(searchResults);
     } catch (error) {
@@ -620,25 +704,37 @@ router.get(
 
     try {
       // Perform the search using the combined searchQuery
-      const result: IUserModel = await UserModel.findById({
+      const result = await UserModel.findById({
         _id: _id,
       })
         .populate({
           path: "recipe_id",
+          model: "recipe",
+          populate: [
+            {
+              path: "comments_id",
+              model: "comment",
+              populate: [
+                {
+                  path: "user_id",
+                  model: "user",
+                  select: "image firstName lastName",
+                },
+              ],
+            },
+          ],
         })
-        .select([
-          "-_id",
-          "-password",
-          "-firstName",
-          "-lastName",
-          "-username",
-          "-favorites_id",
-          "-createdAt",
-          "-updatedAt",
-          "-image",
-          "-image_public_id",
-          "-bio",
-        ]);
+        .populate({
+          path: "recipe_id",
+          model: "recipe",
+          populate: [
+            {
+              path: "userId",
+              model: "user",
+              select: "image",
+            },
+          ],
+        });
 
       res.status(200).send({ status: true, recipe_id: result?.recipe_id });
     } catch (error) {
@@ -656,25 +752,37 @@ router.get(
 
     try {
       // Perform the search using the combined searchQuery
-      const result: IUserModel = await UserModel.findById({
+      const result = await UserModel.findById({
         _id: _id,
       })
         .populate({
           path: "favorites_id",
+          model: "recipe",
+          populate: [
+            {
+              path: "comments_id",
+              model: "comment",
+              populate: [
+                {
+                  path: "user_id",
+                  model: "user",
+                  select: "image firstName lastName",
+                },
+              ],
+            },
+          ],
         })
-        .select([
-          "-_id",
-          "-password",
-          "-firstName",
-          "-lastName",
-          "-username",
-          "-recipe_id",
-          "-createdAt",
-          "-updatedAt",
-          "-image",
-          "-image_public_id",
-          "-bio",
-        ]);
+        .populate({
+          path: "favorites_id",
+          model: "recipe",
+          populate: [
+            {
+              path: "userId",
+              model: "user",
+              select: "image",
+            },
+          ],
+        });
 
       res
         .status(200)
@@ -685,6 +793,45 @@ router.get(
         .status(500)
         .send({ status: false, message: "Error getting favorite recipes" });
     }
+  }
+);
+
+router.patch(
+  "/user/recipe/comment",
+  accountVerificationMiddleware,
+  async (req: Request, res: Response) => {
+    const { comment, recipe_id, user_id } = req.body;
+
+    const data = new CommentModel({
+      comment: comment,
+      user_id: user_id,
+    });
+
+    const savedData = await data.save();
+
+    if (savedData) {
+      const results = await RecipeModel.findByIdAndUpdate(
+        { _id: recipe_id },
+        {
+          $push: {
+            comments_id: {
+              $each: [savedData._id],
+              $position: 0,
+            },
+          },
+        },
+        {
+          returnDocument: "after",
+        }
+      );
+      if (results) {
+        return res.status(200).send(results);
+      }
+    }
+
+    return res
+      .status(400)
+      .send({ status: false, message: "failed to comment" });
   }
 );
 

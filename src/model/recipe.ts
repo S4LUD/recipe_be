@@ -23,6 +23,7 @@ interface IRecipeDocument extends Document {
   likes: number;
   createdAt: Date;
   updatedAt: Date;
+  comments_id?: string[];
 }
 
 // Interface representing the "recipe" model type (for static methods)
@@ -75,6 +76,13 @@ const recipeSchema = new Schema<IRecipeDocument>(
       type: Number,
       default: 0,
     },
+    comments_id: [
+      {
+        type: Schema.Types.ObjectId,
+        required: true,
+        ref: "comment",
+      },
+    ],
   },
   { timestamps: true }
 );
