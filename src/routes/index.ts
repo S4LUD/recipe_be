@@ -641,7 +641,7 @@ router.get(
 
 router.post(
   "/user/search/recipes",
-  accountVerificationMiddleware,
+  // accountVerificationMiddleware,
   async (req: Request, res: Response) => {
     const { searchText, categories } = req.body;
     let searchQuery: any = {}; // Define searchQuery with any type for flexibility
@@ -652,13 +652,13 @@ router.post(
       if (searchText) {
         const ingredients = searchText.split(',').map((ingredient: string) => ingredient.trim());
 
-        // Initialize searchQuery with an $or property as an array
-        searchQuery.$or = [];
+        // Initialize searchQuery with an $and property as an array
+        searchQuery.$and = [];
 
-        // Create a $or query for each ingredient
+        // Create an $and query for each ingredient
         ingredients.forEach((ingredient: string | RegExp) => {
           const ingredientRegex = new RegExp(ingredient, "i");
-          searchQuery.$or.push({ "ingredients.value": ingredientRegex }); // Search by ingredients
+          searchQuery.$and.push({ "ingredients.value": ingredientRegex }); // Search by ingredients
         });
       }
 
