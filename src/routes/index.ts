@@ -650,15 +650,16 @@ router.post(
 
     try {
       if (searchText) {
-        // Use regular expression to perform a case-insensitive search on the title field
-        const searchRegex = new RegExp(searchText, "i");
+        const ingredients = searchText.split(',').map((ingredient: string) => ingredient.trim());
 
         // Initialize searchQuery with an $or property as an array
-        searchQuery.$or = [{ title: searchRegex }]; // Search by title
+        searchQuery.$or = [];
 
-        // Add ingredient search using regex
-        const ingredientRegex = new RegExp(searchText, "i");
-        searchQuery.$or.push({ "ingredients.value": ingredientRegex }); // Search by ingredients
+        // Create a $or query for each ingredient
+        ingredients.forEach((ingredient: string | RegExp) => {
+          const ingredientRegex = new RegExp(ingredient, "i");
+          searchQuery.$or.push({ "ingredients.value": ingredientRegex }); // Search by ingredients
+        });
       }
 
       if (categories?.length > 0) {
