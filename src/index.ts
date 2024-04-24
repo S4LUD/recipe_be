@@ -29,9 +29,7 @@ mongoose
     console.log("Connected to mongoDB");
     // Start the server
     app.listen(env.PORT, () => {
-      console.log(
-        `Server is running on port ${env.PORT} http://192.168.1.72:${env.PORT}`
-      );
+      console.log(`Server is running`);
     });
   })
   .catch((err) => console.log(err));
