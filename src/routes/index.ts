@@ -866,4 +866,67 @@ router.post("/user/get/recipe", async (req: Request, res: Response) => {
   res.status(200).send({ status: true, mostRecentRecipe });
 });
 
+router.get("/users/count", async (req: Request, res: Response) => {
+  try {
+    // Count all users in the UserModel collection
+    const userCount = await UserModel.countDocuments();
+
+    // Return the count of users in the response
+    res.status(200).send({ status: true, count: userCount });
+  } catch (error) {
+    console.error("Error retrieving user count:", error);
+    res
+      .status(500)
+      .send({ status: false, message: "Error retrieving user count" });
+  }
+});
+
+router.get("/recipes/count", async (req: Request, res: Response) => {
+  try {
+    // Count all recipes in the RecipeModel collection
+    const recipeCount = await RecipeModel.countDocuments();
+
+    // Return the count of recipes in the response
+    res.status(200).send({ status: true, count: recipeCount });
+  } catch (error) {
+    console.error("Error retrieving recipe count:", error);
+    res
+      .status(500)
+      .send({ status: false, message: "Error retrieving recipe count" });
+  }
+});
+
+router.get("/recipes/top-liked", async (req: Request, res: Response) => {
+  try {
+    // Find the top 5 most liked recipes, sorted by likes in descending order
+    const topLikedRecipes = await RecipeModel.find()
+      .sort({ likes: -1 })
+      .limit(5)
+      .populate({
+        path: "comments_id",
+        model: "comment",
+        populate: [
+          {
+            path: "user_id",
+            model: "user",
+            select: "image firstName lastName",
+          },
+        ],
+      })
+      .populate({
+        path: "userId",
+        model: "user",
+        select: "image",
+      });
+
+    // Return the top liked recipes in the response
+    res.status(200).send({ status: true, topLikedRecipes });
+  } catch (error) {
+    console.error("Error retrieving top liked recipes:", error);
+    res
+      .status(500)
+      .send({ status: false, message: "Error retrieving top liked recipes" });
+  }
+});
+
 export default router;
