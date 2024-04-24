@@ -2,14 +2,14 @@ import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
-import UserModel, { IUserModel } from "../model/user";
+import UserModel from "../model/user";
 import {
   RegisterMiddleware,
   AccountTokenMiddleware,
   accountVerificationMiddleware,
 } from "../middleware/user";
 import RecipeModel from "../model/recipe";
-import CommentModel, { ICommentModel } from "../model/comment";
+import CommentModel from "../model/comment";
 
 const router: Router = Router();
 // Set up multer for handling file uploads
@@ -652,7 +652,9 @@ router.post(
 
     try {
       if (searchText) {
-        const ingredients = searchText.split(',').map((ingredient: string) => ingredient.trim());
+        const ingredients = searchText
+          .split(",")
+          .map((ingredient: string) => ingredient.trim());
 
         // Initialize searchQuery with an $and property as an array
         searchQuery.$and = [];
