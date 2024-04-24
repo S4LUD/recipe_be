@@ -47,10 +47,12 @@ router.post(
   "/user/login",
   AccountTokenMiddleware,
   async (req: Request, res: Response) => {
-    const { _id } = req.res?.locals.data;
+    const { _id, username } = req.res?.locals.data;
+
     res.header("token", req.res?.locals.token).send({
       status: true,
       _id: _id,
+      username: username,
     });
   }
 );
