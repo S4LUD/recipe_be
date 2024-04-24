@@ -929,4 +929,23 @@ router.get("/recipes/top-liked", async (req: Request, res: Response) => {
   }
 });
 
+router.get("/users/top-liked", async (req: Request, res: Response) => {
+  try {
+    // Aggregate to find users with the most liked recipes
+    const topLikedUsers = await RecipeModel.aggregate([
+      { $group: { _id: "$author.username", totalLikes: { $sum: "$likes" } } },
+      { $sort: { totalLikes: -1 } },
+      { $limit: 5 }, // Limit to the top 5 users
+    ]);
+
+    // Return the top liked users in the response
+    res.status(200).send({ status: true, topLikedUsers });
+  } catch (error) {
+    console.error("Error retrieving top liked users:", error);
+    res
+      .status(500)
+      .send({ status: false, message: "Error retrieving top liked users" });
+  }
+});
+
 export default router;
